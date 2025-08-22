@@ -1,6 +1,4 @@
-// Flame-based visual editor demo for mobile
 // This file defines a simple 2D editor using FlameGame
-// Features: shape creation, selection, drag-to-move, grid snapping, and basic property sheets
 import 'dart:math' as math;
 
 import 'package:flame/components.dart';
@@ -260,6 +258,22 @@ class EditorRect extends RectangleComponent
         ..strokeWidth = 2
         ..color = const Color(0xFF00D1FF);
       canvas.drawRect(Offset.zero & size.toSize(), stroke);
+      // Draw resize handle(s)
+      const double handleSize = 10;
+      final Paint handlePaint = Paint()..color = Colors.white;
+      final List<Offset> handles = [
+        Offset(size.x, size.y), // bottom-right corner
+      ];
+      for (final handle in handles) {
+        canvas.drawRect(
+          Rect.fromCenter(
+            center: handle,
+            width: handleSize,
+            height: handleSize,
+          ),
+          handlePaint,
+        );
+      }
     }
   }
 
@@ -320,6 +334,14 @@ class EditorCircle extends CircleComponent
         ..strokeWidth = 2
         ..color = const Color(0xFF00D1FF);
       canvas.drawCircle(Offset(radius, radius), radius, stroke);
+      // Draw resize handle
+      const double handleSize = 10;
+      final Paint handlePaint = Paint()..color = Colors.white;
+      final Offset handle = Offset(radius * 2, radius); // edge point
+      canvas.drawRect(
+        Rect.fromCenter(center: handle, width: handleSize, height: handleSize),
+        handlePaint,
+      );
     }
   }
 
@@ -368,55 +390,68 @@ class _EditorHomePageState extends State<EditorHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Objects',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: [
-                    FilledButton.tonal(
-                      onPressed: () {
-                        _game.addBox();
-                        Navigator.pop(ctx);
-                      },
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.square_rounded),
-                          SizedBox(width: 8),
-                          Text('Add Box'),
-                        ],
+          child: Container(
+            height: 300,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Objects',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      FilledButton.tonal(
+                        onPressed: () {
+                          _game.addBox();
+                          Navigator.pop(ctx);
+                        },
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.square_rounded),
+                            SizedBox(width: 8),
+                            Text('Add Box'),
+                          ],
+                        ),
                       ),
-                    ),
-                    FilledButton.tonal(
-                      onPressed: () {
-                        _game.addCircle();
-                        Navigator.pop(ctx);
-                      },
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.circle),
-                          SizedBox(width: 8),
-                          Text('Add Circle'),
-                        ],
+                      FilledButton.tonal(
+                        onPressed: () {
+                          _game.addCircle();
+                          Navigator.pop(ctx);
+                        },
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.circle),
+                            SizedBox(width: 8),
+                            Text('Add Circle'),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-              ],
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ),
             ),
           ),
         );
@@ -430,130 +465,151 @@ class _EditorHomePageState extends State<EditorHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setMState) {
             return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Properties',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
+              child: Container(
+                height: 300,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Properties',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    if (sel == null)
-                      const Text('No selection')
-                    else ...[
-                      Row(
-                        children: [
-                          const Text('Position'),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              initialValue: sel.position.x.toStringAsFixed(1),
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: const InputDecoration(
-                                prefixText: 'x: ',
+                      const SizedBox(height: 12),
+                      if (sel == null)
+                        const Text('No selection')
+                      else ...[
+                        Row(
+                          children: [
+                            const Text('Position'),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: sel.position.x.toStringAsFixed(1),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                decoration: const InputDecoration(
+                                  prefixText: 'x: ',
+                                ),
+                                onFieldSubmitted: (v) {
+                                  final x =
+                                      double.tryParse(v) ?? sel.position.x;
+                                  _game.updateSelectedPosition(
+                                    x,
+                                    sel.position.y,
+                                  );
+                                  setState(() {});
+                                  setMState(() {});
+                                },
                               ),
-                              onFieldSubmitted: (v) {
-                                final x = double.tryParse(v) ?? sel.position.x;
-                                _game.updateSelectedPosition(x, sel.position.y);
-                                setState(() {});
-                                setMState(() {});
-                              },
                             ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextFormField(
+                                initialValue: sel.position.y.toStringAsFixed(1),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                decoration: const InputDecoration(
+                                  prefixText: 'y: ',
+                                ),
+                                onFieldSubmitted: (v) {
+                                  final y =
+                                      double.tryParse(v) ?? sel.position.y;
+                                  _game.updateSelectedPosition(
+                                    sel.position.x,
+                                    y,
+                                  );
+                                  setState(() {});
+                                  setMState(() {});
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (sel is EditorRect) ...[
+                          const Text('Size'),
+                          Slider(
+                            value: (sel.size.x),
+                            min: 16,
+                            max: 256,
+                            onChanged: (v) {
+                              _game.updateSelectedSize(v);
+                              setState(() {});
+                              setMState(() {});
+                            },
                           ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: TextFormField(
-                              initialValue: sel.position.y.toStringAsFixed(1),
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                    decimal: true,
-                                  ),
-                              decoration: const InputDecoration(
-                                prefixText: 'y: ',
-                              ),
-                              onFieldSubmitted: (v) {
-                                final y = double.tryParse(v) ?? sel.position.y;
-                                _game.updateSelectedPosition(sel.position.x, y);
-                                setState(() {});
-                                setMState(() {});
-                              },
-                            ),
+                        ] else if (sel is EditorCircle) ...[
+                          const Text('Radius'),
+                          Slider(
+                            value: (sel.radius),
+                            min: 8,
+                            max: 128,
+                            onChanged: (v) {
+                              _game.updateSelectedSize(v * 2);
+                              setState(() {});
+                              setMState(() {});
+                            },
                           ),
                         ],
-                      ),
-                      const SizedBox(height: 12),
-                      if (sel is EditorRect) ...[
-                        const Text('Size'),
-                        Slider(
-                          value: (sel.size.x),
-                          min: 16,
-                          max: 256,
-                          onChanged: (v) {
-                            _game.updateSelectedSize(v);
-                            setState(() {});
-                            setMState(() {});
-                          },
-                        ),
-                      ] else if (sel is EditorCircle) ...[
-                        const Text('Radius'),
-                        Slider(
-                          value: (sel.radius),
-                          min: 8,
-                          max: 128,
-                          onChanged: (v) {
-                            _game.updateSelectedSize(v * 2);
-                            setState(() {});
-                            setMState(() {});
-                          },
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      const Text('Color'),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          for (final c in [
-                            Colors.blueAccent,
-                            Colors.orange,
-                            Colors.green,
-                            Colors.purple,
-                            Colors.red,
-                            Colors.teal,
-                          ])
-                            InkWell(
-                              onTap: () {
-                                _game.updateSelectedColor(c);
-                                setState(() {});
-                                setMState(() {});
-                              },
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: c,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: Colors.black12),
+                        const SizedBox(height: 12),
+                        const Text('Color'),
+                        Wrap(
+                          spacing: 8,
+                          children: [
+                            for (final c in [
+                              Colors.blueAccent,
+                              Colors.orange,
+                              Colors.green,
+                              Colors.purple,
+                              Colors.red,
+                              Colors.teal,
+                            ])
+                              InkWell(
+                                onTap: () {
+                                  _game.updateSelectedColor(c);
+                                  setState(() {});
+                                  setMState(() {});
+                                },
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: c,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.black12),
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 16),
                     ],
-                    const SizedBox(height: 16),
-                  ],
+                  ),
                 ),
               ),
             );
@@ -568,77 +624,92 @@ class _EditorHomePageState extends State<EditorHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Instances',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                SizedBox(
-                  height: 240,
-                  child: ListView.builder(
-                    itemCount: _game.instances.length,
-                    itemBuilder: (_, i) {
-                      final comp = _game.instances[i];
-                      final isSel = identical(comp, _game.selected);
-                      final title = comp is EditorRect
-                          ? 'Rect'
-                          : (comp is EditorCircle
-                                ? 'Circle'
-                                : comp.runtimeType.toString());
-                      return ListTile(
-                        dense: true,
-                        leading: Icon(
-                          title == 'Rect' ? Icons.square_rounded : Icons.circle,
-                        ),
-                        title: Text('$title  (p:${comp.priority})'),
-                        selected: isSel,
-                        onTap: () {
-                          _game.select(comp);
-                          setState(() {});
-                          Navigator.pop(ctx);
-                        },
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              tooltip: 'Front',
-                              icon: const Icon(Icons.arrow_upward),
-                              onPressed: () {
-                                _game.bringToFront(comp);
-                                setState(() {});
-                              },
-                            ),
-                            IconButton(
-                              tooltip: 'Back',
-                              icon: const Icon(Icons.arrow_downward),
-                              onPressed: () {
-                                _game.sendToBack(comp);
-                                setState(() {});
-                              },
-                            ),
-                            IconButton(
-                              tooltip: 'Delete',
-                              icon: const Icon(Icons.delete_outline),
-                              onPressed: () {
-                                comp.removeFromParent();
-                                setState(() {});
-                              },
-                            ),
-                          ],
-                        ),
-                      );
-                    },
+          child: Container(
+            height: 300,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Instances',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 240,
+                    child: ListView.builder(
+                      itemCount: _game.instances.length,
+                      itemBuilder: (_, i) {
+                        final comp = _game.instances[i];
+                        final isSel = identical(comp, _game.selected);
+                        final title = comp is EditorRect
+                            ? 'Rect'
+                            : (comp is EditorCircle
+                                  ? 'Circle'
+                                  : comp.runtimeType.toString());
+                        return ListTile(
+                          dense: true,
+                          leading: Icon(
+                            title == 'Rect'
+                                ? Icons.square_rounded
+                                : Icons.circle,
+                          ),
+                          title: Text('$title  (p:${comp.priority})'),
+                          selected: isSel,
+                          onTap: () {
+                            _game.select(comp);
+                            setState(() {});
+                            Navigator.pop(ctx);
+                          },
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                tooltip: 'Front',
+                                icon: const Icon(Icons.arrow_upward),
+                                onPressed: () {
+                                  _game.bringToFront(comp);
+                                  setState(() {});
+                                },
+                              ),
+                              IconButton(
+                                tooltip: 'Back',
+                                icon: const Icon(Icons.arrow_downward),
+                                onPressed: () {
+                                  _game.sendToBack(comp);
+                                  setState(() {});
+                                },
+                              ),
+                              IconButton(
+                                tooltip: 'Delete',
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () {
+                                  comp.removeFromParent();
+                                  setState(() {});
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );
@@ -651,60 +722,74 @@ class _EditorHomePageState extends State<EditorHomePage> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.transparent,
       builder: (ctx) {
         return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Layers',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 8),
-                ListTile(
-                  leading: const Icon(Icons.grid_on),
-                  title: const Text('Grid'),
-                  subtitle: Text(
-                    'Visible: ${_game.gridVisible}, cell: ${_game.gridSize.toInt()}',
+          child: Container(
+            height: 300,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(16),
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Layers',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
-                  trailing: Switch(
-                    value: _game.gridVisible,
-                    onChanged: (_) {
-                      setState(() {
-                        _game.toggleGrid();
-                      });
-                    },
+                  const SizedBox(height: 8),
+                  ListTile(
+                    leading: const Icon(Icons.grid_on),
+                    title: const Text('Grid'),
+                    subtitle: Text(
+                      'Visible: ${_game.gridVisible}, cell: ${_game.gridSize.toInt()}',
+                    ),
+                    trailing: Switch(
+                      value: _game.gridVisible,
+                      onChanged: (_) {
+                        setState(() {
+                          _game.toggleGrid();
+                        });
+                      },
+                    ),
                   ),
-                ),
-                const Divider(),
-                const Text('Shape order (top to bottom by priority)'),
-                const SizedBox(height: 6),
-                SizedBox(
-                  height: 220,
-                  child: ListView(
-                    children: [
-                      for (final comp
-                          in _game.instances
-                            ..sort((a, b) => b.priority.compareTo(a.priority)))
-                        ListTile(
-                          dense: true,
-                          leading: const Icon(Icons.drag_indicator),
-                          title: Text(
-                            comp is EditorRect
-                                ? 'Rect'
-                                : (comp is EditorCircle
-                                      ? 'Circle'
-                                      : comp.runtimeType.toString()),
+                  const Divider(),
+                  const Text('Shape order (top to bottom by priority)'),
+                  const SizedBox(height: 6),
+                  SizedBox(
+                    height: 220,
+                    child: ListView(
+                      children: [
+                        for (final comp
+                            in _game.instances..sort(
+                              (a, b) => b.priority.compareTo(a.priority),
+                            ))
+                          ListTile(
+                            dense: true,
+                            leading: const Icon(Icons.drag_indicator),
+                            title: Text(
+                              comp is EditorRect
+                                  ? 'Rect'
+                                  : (comp is EditorCircle
+                                        ? 'Circle'
+                                        : comp.runtimeType.toString()),
+                            ),
+                            subtitle: Text('priority: ${comp.priority}'),
                           ),
-                          subtitle: Text('priority: ${comp.priority}'),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -732,6 +817,87 @@ class _EditorHomePageState extends State<EditorHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              child: const Text(
+                'Buildcade',
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.tune),
+              title: const Text('Properties'),
+              onTap: () {
+                Navigator.pop(context);
+                _openPropertiesSheet();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.category),
+              title: const Text('Objects'),
+              onTap: () {
+                Navigator.pop(context);
+                _openObjectsSheet();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.list),
+              title: const Text('Instances'),
+              onTap: () {
+                Navigator.pop(context);
+                _openInstancesSheet();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.layers),
+              title: const Text('Layers'),
+              onTap: () {
+                Navigator.pop(context);
+                _openLayersSheet();
+              },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.insert_drive_file),
+              title: const Text('Resources'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement resources screen
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.auto_awesome_motion),
+              title: const Text('Scenes'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement scenes screen
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement settings screen
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('About'),
+              onTap: () {
+                Navigator.pop(context);
+                // TODO: Implement about dialog or screen
+              },
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         title: const Text('Buildcade — Flame GUI'),
@@ -804,9 +970,10 @@ class _EditorHomePageState extends State<EditorHomePage> {
             right: 0,
             bottom: 0,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
               color: Theme.of(context).colorScheme.surface.withOpacity(0.9),
               child: SafeArea(
+                // bottom: false,
                 top: false,
                 child: Row(
                   children: [
